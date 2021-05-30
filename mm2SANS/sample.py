@@ -457,11 +457,11 @@ class Sample:
         """ Returns coordinate index for plotting, depending on string value. """
 
         if (index_string == 'x') or (index_string == 'V'):
-            index = 1
-        elif (index_string == 'y') or (index_string == 'W'):
-            index = 2
-        else: # z, U
             index = 0
+        elif (index_string == 'y') or (index_string == 'U'):
+            index = 1
+        else: # z, W
+            index = 2
 
         return index
 
