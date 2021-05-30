@@ -125,7 +125,8 @@ class Sample:
             #self.R_volumes = np.mean(self.R_volumes)
         else: # voxel volumes are provided
             if np.prod(np.shape(voxel_volumes)) != self.number_of_points:
-                print('REMARK to input data: The length of point volumes does not correspond to number of positions.')
+                if print_diagnostics is True:
+                    print('REMARK to input data: The length of point volumes does not correspond to number of positions.')
                 self.R_volumes = np.mean( voxel_volumes )
             else:
                 self.R_volumes = voxel_volumes

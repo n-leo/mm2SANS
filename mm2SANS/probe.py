@@ -79,7 +79,7 @@ class Probe:
 
         # neutron polarisation in beamline reference frame (U,V,W)
         #self.neutron_polarisation_UVW = Rotation.from_matrix(self.Beamline._rotation_uvw_UVW).apply(self.Beamline.neutron_polarisation)
-        self.neutron_polarisation_UVW = matmul( self.Beamline.neutron_polarisation, self.Beamline._rotation_uvw_UVW )
+        self.neutron_polarisation_UVW = np.matmul( self.Beamline.neutron_polarisation, self.Beamline._rotation_uvw_UVW )
         
         return
         
