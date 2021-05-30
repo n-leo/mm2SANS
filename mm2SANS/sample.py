@@ -104,9 +104,12 @@ class Sample:
             self.periodicity = np.array( [0., 0., 0.] )
 
         # bounding box of structure, for control
-        self.bounding_box = np.array( [
-            np.max( self.R_veclist[:, i] ) - np.min( self.R_veclist[:, i] ) for i in range( 3 )
-            ] )
+        if len( np.shape(self.R_veclist) ) == 1:
+            self.bounding_box = np.array([0, 0, 0])
+        else:
+            self.bounding_box = np.array( [
+                np.max( self.R_veclist[:, i] ) - np.min( self.R_veclist[:, i] ) for i in range( 3 )
+                ] )
         if print_diagnostics is True:
             print(f'Data bounding box size: ({self.bounding_box[0]*1e9:.1f}, {self.bounding_box[1]*1e9:.1f}, {self.bounding_box[2]*1e9:.1f}) nm.')
 
@@ -247,6 +250,9 @@ class Sample:
                 output = np.transpose(input)
             else:
                 print('ERROR: Array does not have shape (n, 3) or (3, n) and thus is not a list of vectors!')
+
+        # make sure that all entries are numpy arrays
+        output = np.array([np.array(out) for out in output])
 
         return output
 
@@ -389,23 +395,25 @@ class Sample:
             , origin='lower'
             , zorder = 1
             )
-        if self.is_magnetic is True:
-            # TODO: the x and y coordinates of the quiver plot are interchanged compared to the SLD image - transpose the former?
+        if (self.is_magnetic is True) and (show_magnetic is True):
             ax.quiver(
                   r_unit_scaling_factor * self.R_veclist[:, col_index_x]
                 , r_unit_scaling_factor * self.R_veclist[:, col_index_y]
-                , self.M_veclist[:, col_index_x]
-                , self.M_veclist[:, col_index_y]
-                , color='black'
+                , np.transpose(self.M_veclist)[col_index_x] / self.saturation_magnetisation
+                , np.transpose(self.M_veclist)[col_index_y] / self.saturation_magnetisation
+                , color='white'
                 , pivot = 'middle'
-                #, linewidth=1.75
+                , linewidth=1.5
+                , scale = 10
                 , zorder = 5
                 )
 
         # add colorbar
         if plot_cbar is True:
-            cbar = grid.cbar_axes[0].colorbar( cbar_ref )
-            cbar.ax.set_ylabel( '$b_N$ ??? m/f.u.)', rotation=90 )
+            #cbar = grid.cbar_axes[0].colorbar( cbar_ref )
+            cax = grid.cbar_axes[0]
+            plt.colorbar( cbar_ref, cax=cax )
+            cax.set_ylabel( '$b_N$ ??? m/f.u.)', rotation=90 )
 
         return
 

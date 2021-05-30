@@ -6,13 +6,9 @@ In development, so please use with care, and let me know of obivous bugs.
 
 ## Installation
 
-Easiest used is probably in conjuction with [Anaconda](https://store.continuum.io/cshop/anaconda/) which bundles python libraries for scientific computing, including Ipython/Jupyter notebooks.
+Easiest used is probably in conjuction with [Anaconda](https://www.anaconda.com/products/individual) which bundles python libraries for scientific computing, including Ipython/Jupyter notebooks.
 
-To install the ```mm2SANS``` package, download the source code. Browse (within an Anaconda prompt) to the folder containing the unpacked code and run 
-```
-python .\setup.py install
-```
-.
+To install the ```mm2SANS``` package, download the source code. Browse (within an Anaconda prompt) to the folder containing the unpacked code and run `python .\setup.py install`.
 
 ## Usage
 
