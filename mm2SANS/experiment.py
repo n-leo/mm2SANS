@@ -655,6 +655,9 @@ class Experiment:
 
         # plot color bar (only if figure & axis have been initialised within function)
         if plot_cbar is True:
+            cax = grid.cbar_axes[0]
+            # TODO add labels for colorbars!
+            # cax.set_ylabel( '$\sigma$', rotation=90 )
             if property == 'asym':
                 # add normalisation to -1/+1 for spin asymmetry
                 cbar_ref = ax.scatter(
@@ -664,11 +667,9 @@ class Experiment:
                     , norm = colors.Normalize( vmin=-1 * limit, vmax=+1 * limit, clip=False )
                     , zorder = -5
                     )
-                cbar = grid.cbar_axes[0].colorbar( cbar_ref )
+                plt.colorbar( cbar_ref, cax=cax )
             else:
-                cbar = grid.cbar_axes[0].colorbar( cbar_ref_data )
-                # TODO add labels for colorbars!
-
+                plt.colorbar( cbar_ref_data, cax=cax )
         return
 
 
@@ -735,8 +736,11 @@ class Experiment:
                 , vmin=-1 * limit, vmax=+1 * limit
                 , zorder=-10
                 )
-            cbar = grid.cbar_axes[0].colorbar(cbar_ref)
-            cbar.ax.set_ylabel('$\sigma$ (??? m$^2$/f.u.)', rotation=90)
+            cax = grid.cbar_axes[0]
+            plt.colorbar( cbar_ref, cax=cax )
+            # TODO: units of scattering cross section?
+            # cbar.ax.set_ylabel('$\sigma$ (??? m$^2$/f.u.)', rotation=90)
+            cax.set_ylabel( '$\sigma$', rotation=90 )
 
         return
 
@@ -804,8 +808,9 @@ class Experiment:
             , vmin=-1 * limit, vmax=+1 * limit
             , zorder=-10
             )
-        cbar = grid.cbar_axes[0].colorbar(cbar_ref)
-        cbar.ax.set_ylabel( '$b$ ??? m/f.u.)', rotation=90 )
+        cax = grid.cbar_axes[0]
+        plt.colorbar( cbar_ref, cax=cax )
+        cax.set_ylabel( '$b$ m/f.u.)', rotation=90 )
 
         return
 

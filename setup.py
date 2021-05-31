@@ -30,7 +30,7 @@ setup(
     install_requires=[
 		'numpy >= 1.15',
 		'pandas >= 0.20',
-		'scipy >= 1.5',
+		'scipy >= 1.2',
 		'matplotlib >= 3.3',
 		'seaborn >= 0.9',
 		],

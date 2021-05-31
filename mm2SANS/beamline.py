@@ -8,11 +8,6 @@ class Beamline:
     Beamline settings.
     """
     
-    #import numpy as np
-    #from scipy.spatial.transform import Rotation 
-    # to get projections for neutron polarisation, >scipy 1.2 required
-    
-    
     def __init__(self
                  , neutron_wavelength=6e-10, detector_distance=15.
                  , neutron_polarisation=None, magnetic_field = 0.

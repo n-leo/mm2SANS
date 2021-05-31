@@ -11,11 +11,12 @@ class Detector:
         
         :Parameters:
         *sans_instrument*: None or string
-            *None* or *PSI_SANS1*: 128 x 128 pixels measuring 7.5 mm x 7.5 mm
+            *None* or *'PSI_SANS1'*: 128 x 128 pixels measuring 7.5 mm x 7.5 mm
+            *'test'*: 64 x 64 pixels measuring 15 mm x 15 mm
             
         :Returns:
         Detector object which stores detector settings.
-        Determines q-map together with neutron wavelength and detector distance.
+        Determines, in combination with neutron wavelangth and detector distance, the (reciprocal space) Q-map.
         """
         
         self.instrument = sans_instrument

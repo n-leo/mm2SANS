@@ -293,7 +293,7 @@ class Sample:
         return net_volume
 
 
-    def plot_scattering_length(self, ax=None, plane='xy', step_size=2e-9, r_unit='nm', show_magnetic=False):
+    def plot_scattering_length(self, ax=None, plane='xz', step_size=2e-9, r_unit='nm', show_magnetic=False):
         """
         Plot sample density projected onto one of the principal planes.
 
@@ -301,7 +301,8 @@ class Sample:
         *ax* matplotlib axis to plot upon.
             Default None. If None, a new figure will be created.
         *plane* string with two letters.
-            Default 'xy'. Plane on which sample density is projected to.
+            Default 'xz' (parallel to detector plane, if no rotations are applied).
+            Plane on which sample density is projected to.
             When used in the Experiment class, the plane 'VW' is given with respect to the beamline coordinate system.
         *step_size* float, m
             Default 2 nm. Spatial resolution of the mesh.
@@ -375,7 +376,7 @@ class Sample:
                         * np.heaviside( radius - mesh_dist, 0. )
                     )
                 )
-        projected_density_sum = np.mean( projected_density, axis=0 )
+        projected_density_sum = np.sum( projected_density, axis=0 )
 
         # set axes limits
         color_lim = np.max( np.abs( projected_density_sum ) )
@@ -399,21 +400,20 @@ class Sample:
             ax.quiver(
                   r_unit_scaling_factor * self.R_veclist[:, col_index_x]
                 , r_unit_scaling_factor * self.R_veclist[:, col_index_y]
-                , np.transpose(self.M_veclist)[col_index_x] / self.saturation_magnetisation
-                , np.transpose(self.M_veclist)[col_index_y] / self.saturation_magnetisation
+                , np.transpose(self.M_veclist)[col_index_x] / self.saturation_magnetisation / np.mean(self.R_volumes)
+                , np.transpose(self.M_veclist)[col_index_y] / self.saturation_magnetisation / np.mean(self.R_volumes)
                 , color='white'
                 , pivot = 'middle'
                 , linewidth=1.5
-                , scale = 10
+                #, scale = 10
                 , zorder = 5
                 )
 
         # add colorbar
         if plot_cbar is True:
-            #cbar = grid.cbar_axes[0].colorbar( cbar_ref )
             cax = grid.cbar_axes[0]
             plt.colorbar( cbar_ref, cax=cax )
-            cax.set_ylabel( '$b_N$ ??? m/f.u.)', rotation=90 )
+            cax.set_ylabel( '$b_N$ m/f.u.)', rotation=90 )
 
         return
 
