@@ -2,7 +2,9 @@
 
 Calculation of SANS scattering patterns from micromagnetic simulations.
 
-In development, so please use with care, and let me know of obivous bugs.
+## Disclaimer
+
+This code is a heavy work in progress, so use it with care, and please let me know if you find any bugs ;-).
 
 ## Installation
 
@@ -12,6 +14,7 @@ To install the ```mm2SANS``` package, download the source code. Browse (within a
 
 ## Usage
 
-See example IPython notebooks (*.ipynb*).
+See example IPython notebooks (*.ipynb*) in the `examples` folder.
 
 Each function in the code features a help text accessible via `command?` or via the `Shift-Tab` tool-tip shortcut from the IPython Notebook interface.
+
