@@ -4,7 +4,7 @@ Calculation of SANS scattering patterns from micromagnetic simulations.
 
 ## Disclaimer
 
-This code is a heavy work in progress, so use it with care, and please let me know if you find any bugs ;-).
+This code is a heavy work in progress, so use it with caution, and please let me know if you find any bugs ;-).
 
 ## Installation
 
