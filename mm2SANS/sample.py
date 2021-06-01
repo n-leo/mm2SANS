@@ -87,9 +87,11 @@ class Sample:
         Sample object.
         """
 
+        self.print_diagnostics = print_diagnostics
+
         # structure: position coordinates, shift coordinates to centre of mass
         self.R_veclist = self._check_array_dimension(positions)
-        self.R_veclist = self.R_veclist - np.mean( self.R_veclist, axis=0)
+        self.R_veclist = self.R_veclist #- np.mean( self.R_veclist, axis=0)
 
         # number of mesh points, and mesh type
         self.number_of_points = len(self.R_veclist) # right order?
@@ -104,14 +106,15 @@ class Sample:
             self.periodicity = np.array( [0., 0., 0.] )
 
         # bounding box of structure, for control
-        if len( np.shape(self.R_veclist) ) == 1:
-            self.bounding_box = np.array([0, 0, 0])
-        else:
-            self.bounding_box = np.array( [
-                np.max( self.R_veclist[:, i] ) - np.min( self.R_veclist[:, i] ) for i in range( 3 )
-                ] )
-        if print_diagnostics is True:
-            print(f'Data bounding box size: ({self.bounding_box[0]*1e9:.1f}, {self.bounding_box[1]*1e9:.1f}, {self.bounding_box[2]*1e9:.1f}) nm.')
+        self.bounding_box = self.periodicity
+        # if len( np.shape(self.R_veclist) ) == 1:
+        #     self.bounding_box = np.array([0, 0, 0])
+        # else:
+        #     self.bounding_box = np.array( [
+        #         np.max( self.R_veclist[:, i] ) - np.min( self.R_veclist[:, i] ) for i in range( 3 )
+        #         ] )
+        # if self.print_diagnostics is True:
+        #     print(f'Data bounding box size: ({self.bounding_box[0]*1e9:.1f}, {self.bounding_box[1]*1e9:.1f}, {self.bounding_box[2]*1e9:.1f}) nm.')
 
         # set or calculate volume of each data point
         # regular grid: calculate scalar cuboid volume
@@ -128,7 +131,7 @@ class Sample:
             #self.R_volumes = np.mean(self.R_volumes)
         else: # voxel volumes are provided
             if np.prod(np.shape(voxel_volumes)) != self.number_of_points:
-                if print_diagnostics is True:
+                if self.print_diagnostics is True:
                     print('REMARK to input data: The length of point volumes does not correspond to number of positions.')
                 self.R_volumes = np.mean( voxel_volumes )
             else:
@@ -152,7 +155,7 @@ class Sample:
 
         # correct voxel volumes
         if volume_correction_factor == 1.:
-            if print_diagnostics is True:
+            if self.print_diagnostics is True:
                 print( 'REMARK: Voxel volumes were not corrected.' )
         else:
             self.R_volumes = volume_correction_factor * self.R_volumes
@@ -173,7 +176,7 @@ class Sample:
         self.M_veclist = np.zeros_like(self.R_veclist)
         if (moments is None) or (np.mean( np.linalg.norm( moments, axis=0 ) ) == 0):
             self.is_magnetic = False,
-            if print_diagnostics is True:
+            if self.print_diagnostics is True:
                 print('REMARK: Sample is non-magnetic.')
         else:
             self.is_magnetic = True
@@ -210,7 +213,7 @@ class Sample:
             statistics += f', and an average moment of {np.mean(np.linalg.norm(self.M_veclist, axis=0)):.1e} mu_Bohr.'
         else:
             statistics += '.'
-        if print_diagnostics is True:
+        if self.print_diagnostics is True:
             print(statistics)
 
         return
@@ -268,7 +271,8 @@ class Sample:
         if self._regular_grid == True:
             # scalar volume of cuboid cell: product of smallest non-zero distances in each direction
             R_volume = np.prod([np.unique(np.abs(np.diff(self.R_veclist[:,i])))[1] for i in range(3)])
-            print(f"Structural data is on regular grid, with a cell volume of {R_volume:.2e} m^3.")
+            if self.print_diagnostics is True:
+                print(f"Structural data is on regular grid, with a cell volume of {R_volume:.2e} m^3.")
         else:
             # get pairwise distances between each data point
             R_distmatrix = np.linalg.norm(np.repeat(self.R_veclist[:, np.newaxis], np.shape(self.R_veclist)[0], 1) - self.R_veclist, axis = -1)
@@ -293,7 +297,7 @@ class Sample:
         return net_volume
 
 
-    def plot_scattering_length(self, ax=None, plane='xz', step_size=2e-9, r_unit='nm', show_magnetic=False):
+    def plot_scattering_length(self, ax=None, plane='xz', step_size=2e-9, r_unit='nm', title='', show_magnetic=False):
         """
         Plot sample density projected onto one of the principal planes.
 
@@ -308,6 +312,8 @@ class Sample:
             Default 2 nm. Spatial resolution of the mesh.
         *length_scale* Reference length scale for axis scaling.
             Default 'nm'. Other options are 'm', 'AA'/'Angstrom', 'nanometres' etc (see q_unit...)
+        *title* string
+            Optional axis title (default is empty).
         *show_magnetic* Boolean
             Default False. Whether magnetisation data also should be shown.
 
@@ -333,6 +339,7 @@ class Sample:
             ax.set_aspect('equal')
             plot_cbar = True
             return_value = fig
+        ax.set_title(title)
 
         # get columns and set axis labels
         col_index_x, col_index_y = self._get_coordinate_index(plane[0]), self._get_coordinate_index(plane[1])
@@ -347,7 +354,6 @@ class Sample:
             plot_min, plot_max = -0.5 * self.bounding_box, +0.5 * self.bounding_box
 
         # coordinate mesh for density image
-        # TODO: interchange x and y coordinates???
         x_steps = np.arange( plot_min[col_index_x], plot_max[col_index_x], step_size )
         y_steps = np.arange( plot_min[col_index_y], plot_max[col_index_y], step_size )
         mesh_xy = np.transpose( np.meshgrid( x_steps, y_steps, indexing='ij' ) )
@@ -390,7 +396,8 @@ class Sample:
         #extent = [mesh_xy[col_index_x][0], mesh_xy[col_index_x][-1], mesh_xy[col_index_y][0], mesh_xy[col_index_y][-1]]
         cbar_ref = ax.imshow(
               np.real( projected_density_sum )  # scattering length might be complex!
-            , cmap=cmocean.cm.balance, vmin = -color_lim, vmax = +color_lim
+            , cmap=cmocean.cm.balance
+            , vmin = -color_lim, vmax = +color_lim
             , extent= extent
             , interpolation='bilinear'
             , origin='lower'
@@ -456,9 +463,9 @@ class Sample:
     def _get_coordinate_index(index_string):
         """ Returns coordinate index for plotting, depending on string value. """
 
-        if (index_string == 'x') or (index_string == 'V'):
+        if (index_string == 'x') or (index_string == 'U'):
             index = 0
-        elif (index_string == 'y') or (index_string == 'U'):
+        elif (index_string == 'y') or (index_string == 'V'):
             index = 1
         else: # z, W
             index = 2

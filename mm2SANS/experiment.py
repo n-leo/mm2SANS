@@ -4,6 +4,9 @@ from mm2SANS.probe import Probe
 import numpy as np
 import pandas as pd
 
+# for sample rotations
+#from scipy.spatial.transform import Rotation
+
 import scipy.constants
 # TODO: sign for magnetic scattering length positive or negative?
 b_H = (  # prefactor for magnetic scattering length *density* = -2.7 fm/mu_B = -2.906e8 (Am)^{-1}
@@ -83,10 +86,9 @@ class Experiment:
 
         # transform the coordinates and moments into the beamline coordinate system (U,V,W)
         # TODO: rotations come out completely wrong!!! Is rotation matrix correctly defined? Is matmul correct here???
-        # TODO: rather use scipy rotations?
         R_veclist = np.matmul(input_Sample.R_veclist, self.Probe.Beamline._rotation_xyz_UVW)
         M_veclist = np.matmul(input_Sample.M_veclist, self.Probe.Beamline._rotation_xyz_UVW)
-        periodicity = np.matmul( input_Sample.periodicity, self.Probe.Beamline._rotation_xyz_UVW )
+        periodicity = np.abs( np.matmul( input_Sample.periodicity, self.Probe.Beamline._rotation_xyz_UVW ) )
         #rotation_xyz_UVW = Rotation.from_matrix( self.Probe.Beamline._rotation_xyz_UVW )
         #R_veclist = rotation_xyz_UVW.apply(input_Sample.R_veclist)
         #M_veclist = rotation_xyz_UVW.apply(input_Sample.M_veclist)

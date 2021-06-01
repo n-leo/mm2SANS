@@ -99,7 +99,7 @@ class Beamline:
     def calc_rotation_matrices(self):
         """ Calculate roation matrices between sample, sample environment, and beamline """
 
-        # 2021-05-25 re-set rotation matrices (otherwise each re-run will lead to differnt results!)
+        # re-set rotation matrices to zero rotations
         _rotation_xyz_uvw = Rotation.from_matrix( np.diag((1,1,1)) )
         _rotation_uvw_UVW = Rotation.from_matrix( np.diag((1,1,1)) )
         _rotation_xyz_UVW = Rotation.from_matrix( np.diag((1,1,1)) )
@@ -107,13 +107,12 @@ class Beamline:
         # orientation of sample in sample environment
         for rotation in self.sample_rotations:            
             rotation_type, rotation_angle = self._test_rotation_input(rotation)
-            _rotation_xyz_uvw = self._get_rotation_matrix(rotation_type, rotation_angle, self._angle_unit) * _rotation_xyz_uvw
+            _rotation_xyz_uvw = self._get_rotation_matrix(rotation_type, rotation_angle) * _rotation_xyz_uvw
 
         # orientation of sample environment in beamline
         for rotation in self.sample_environment_rotations:
             rotation_type, rotation_angle = self._test_rotation_input(rotation)
-            _rotation_uvw_UVW = self._get_rotation_matrix( rotation_type, rotation_angle,
-                                                                self._angle_unit ) * _rotation_uvw_UVW
+            _rotation_uvw_UVW = self._get_rotation_matrix(rotation_type, rotation_angle) * _rotation_uvw_UVW
 
         # oriantation of sample in beamline
         _rotation_xyz_UVW = _rotation_uvw_UVW * _rotation_xyz_uvw
@@ -123,18 +122,21 @@ class Beamline:
         self._rotation_uvw_UVW = _rotation_uvw_UVW.as_matrix()
         self._rotation_xyz_UVW = _rotation_xyz_UVW.as_matrix()
 
-        # print( 'xyz => uvw', self._rotation_xyz_uvw, np.linalg.det( self._rotation_xyz_uvw ) )
-        # print( 'uvw => UVW', self._rotation_uvw_UVW, np.linalg.det( self._rotation_uvw_UVW ) )
-        # print( 'xyz => UVW',  self._rotation_xyz_UVW, np.linalg.det(self._rotation_xyz_UVW) )
         #  print('Rotation matrices between coordinate systems (x,y,z), (u,v,w) and (U,V,W) calculated.')
 
         return
 
 
-    @staticmethod
-    def _test_rotation_input(rotation):
-        """ Helper function: Do a quick test if rotation input is correctly given. Swa values, if neccessary. """
-        a, b = rotation  # one should be string, the other a float val
+    def _test_rotation_input(self, rotation):
+        """
+        Test rotation input.
+         - Swap values, if neccessary.
+         - are rotation of type roll, yaw or pitch?
+         - is rotation angle given in radians?
+         """
+
+        # rotation input: one value should be a string, the other a float value
+        a, b = rotation
         test_1 = (isinstance(a, str) and isinstance(b, str))
         test_2 = (not(isinstance(a, str)) and not(isinstance(b, str)) )
         if test_1 or test_2:
@@ -146,35 +148,43 @@ class Beamline:
         else:
             rotation_type, rotation_angle = b, a
 
+        # check if rotation type is either roll, yaw, or pitch
+        if (rotation_type == 'roll') or (rotation_type == 'yaw') or (rotation_type=='pitch'):
+            pass
+        else:
+            print(f'{rotation_type} is invalid: neither roll, yaw or pitch')
+            print('\tNo rotation applied to data.')
+            rotation_type, rotation_angle = 'roll', 0.
+
+        # test unit of rotation angle, convert to radians
+        if self._angle_unit == 'deg':
+            rotation_angle = np.deg2rad(rotation_angle)
+
         return rotation_type, rotation_angle
 
 
     @staticmethod
-    def _get_rotation_matrix(rotation_type, rotation_angle, angle_type):
+    def _get_rotation_matrix(rotation_type, rotation_angle):
         """
         Helper function:
         Returns rotation matrix for rotation_angle (either in angle_type = 'deg' or 'rad')
         around different axes according to rotation_type = 'yaw', 'pitch', 'roll'.
 
-        Will output a scipy.spatial.Rotation object (instead of a matrix...)
+        Will output a scipy.spatial.Rotation object
         """
 
-        if angle_type == 'deg':
-            angle = np.deg2rad(rotation_angle)
+        # for some reason pitch and yaw have the rotation axes swapped, even though it does not make any sense to me...
+        if rotation_type == 'roll':
+            rotation_vector = [0, 1, 0]
+        elif rotation_type == 'pitch':
+            rotation_vector = [1, 0, 0]
+        elif rotation_type == 'yaw':
+            rotation_vector = [0, 0, 1]
         else:
-            angle = rotation_angle
+            pass # exceptions are taken care of by _test_rotation_input()
 
-        # rotation matrix for pitch, yaw, roll
-        if rotation_type == 'yaw':  # rotation around vertical z axis (W axis)
-            rotation_matrix = Rotation.from_rotvec( rotation_angle * np.array([0, 0, 1]))
-        elif rotation_type == 'pitch': # rotation around horizontal y axis (V axis)
-            rotation_matrix = Rotation.from_rotvec( rotation_angle * np.array( [0, 1, 0] ) )
-        elif rotation_type == 'roll':  # rotation around x axis (or U along beam)
-            rotation_matrix = Rotation.from_rotvec( rotation_angle * np.array( [1, 0, 0] ) )
-        else:
-            rotation_matrix = Rotation.from_matrix( np.diag([1,1,1]) )
-            print('Rotation type neither yaw, pitch, or roll - unity matrix returned!')
-
+        # return scipy rotation object
+        rotation_matrix = Rotation.from_rotvec( rotation_angle * np.array(rotation_vector) )
         return rotation_matrix
 
 
