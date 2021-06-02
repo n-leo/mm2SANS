@@ -19,9 +19,7 @@ Each function in the code features a help text accessible via `command?` or via 
 The example IPython notebooks (*.ipynb*) in the `examples` folder detail the following features:
 
 - Example 1: Overview of the `Sample` class (properties of the sample).
-- Example 2: Overview of the `Probe` class (settings of beamline)
+- Example 2: Overview of the `Probe` class (settings of beamline and Q map).
 - Example 3: Overview of the `Experiment` class (calculation of scattering patterns).
 - Example 4: Plot magnetic scattering pattern for neutron polarisation in differnt directions.
-
-
-
+- Example 5: Overview of the three coordinate systems used to describe the SANS experiment.
