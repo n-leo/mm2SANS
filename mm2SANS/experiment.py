@@ -117,7 +117,8 @@ class Experiment:
         # angle phi [deg]: 0 = right horizontal axis, counts counterclockwise (i.e. mathmatically correct notation)
         # TODO: check that above angle definition is correct, after interchange of U and W!!!
         self.data['q_phi'] = np.rad2deg( np.arctan2( self.data['q_V'], self.data['q_W'] ) ) + 180.
-        self.data['q_abs'] = np.linalg.norm( self.Probe.Q_veclist, axis=-1 )
+        self.data['q_abs'] = np.sqrt( np.sum( np.power(self.data[['q_V', 'q_W']], 2), axis=1 ) )
+        #self.data['q_abs'] = np.linalg.norm( self.Probe.Q_veclist[:, -1], axis=-1 )
 
         # set data columns for scattering components
         column_names = [
@@ -458,6 +459,36 @@ class Experiment:
         return
 
 
+    def save_data(self, filename=None):
+        """
+        Saves the output table as comma-separated file.
+        If no *filename* is provided, one will generated from the experiment settings.
+        *filename* should not contain a file extension.
+        """
+
+        # create file name
+        if filename is None:
+            filename = f'mm2SANS'
+            if len(self.Sample.sample_name) > 0:
+                filename += f'_{self.Sample.sample_name}'
+            filename += f'_lamda{np.round(1e9*self.Probe.Beamline.neutron_wavelength, 1)}nm'
+            filename += f'_det{np.round(self.Probe.Beamline.detector_distance_U)}m'
+            if len(self.Probe.Beamline.sample_rotations) > 0:
+                filename += f'_samplerot'
+            if len(self.Probe.Beamline.sample_environment_rotations) > 0:
+                filename += '_envrot'
+
+        filename += '.dat'
+
+        # save csv file
+        self.data.to_csv(filename, index_label=False)
+        print(f'Data saved to {filename}')
+
+        return
+
+
+
+
     @staticmethod
     def _get_axis_title(column_title):
         """
@@ -544,8 +575,9 @@ class Experiment:
 
         :Parameters:
         *column_name*: string, Name of data column to plot.
-            real values: 'I_pp', 'I_mm', 'I_pm', 'I_mp', 'I_p', 'I_m', 'I_sum', 'I_dif', 'asym'
-            complex values: 'sld_struct', 'sld_magn_i' with i = U, V, W
+            real-valued cross sections: 'I_pp', 'I_mm', 'I_pm', 'I_mp', 'I_p', 'I_m', 'I_sum', 'I_dif'
+            real-valued additional terms: 'asym'
+            complex-valued scattering lengths: 'sld_struct', 'sld_magn_i' with i = U, V, W
         *ax*: matplotlib axis. Axis to plot on.
             Default None. If None, a new figure will be created.
         *title*: string. Axis title.
@@ -558,6 +590,7 @@ class Experiment:
         :Returns:
         Axis with plotted data.
         """
+
 
         # initialise figure
         plot_cbar = False

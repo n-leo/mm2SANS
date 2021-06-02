@@ -25,8 +25,9 @@ class Sample:
     """ Sample class """
 
     def __init__(self,
+                   sample_name = ''
                  # structural parameters
-                   positions=None
+                 , positions=None
                  , periodicity=None
                  , number_of_unit_cells = 1
                  , voxel_volumes=None
@@ -41,7 +42,12 @@ class Sample:
         Initialise a sample object. 
         
         :Parameters:
-        
+
+        *sample_name*: string
+            Optional, default empty. Description of the sample.
+        *print_diagnostics* Boolean
+            Default True. Output remarks upon creation of the Sample object.
+
         ::Structural parameters::
         *R_veclist*: array (n_R, 3) | [m]
             List of position vectors. 
@@ -81,13 +87,12 @@ class Sample:
             Use e.g. periodictable.nsf.neutron_sld(*args, **kw) to get values (https://periodictable.readthedocs.io).
             Will be transformed into 1/m^2, for calculation purposes.
 
-        *print_diagnostics* Boolean, print remarks upon creation of the object
-
         :Returns:
         Sample object.
         """
 
         self.print_diagnostics = print_diagnostics
+        self.sample_name = sample_name
 
         # structure: position coordinates, shift coordinates to centre of mass
         self.R_veclist = self._check_array_dimension(positions)
