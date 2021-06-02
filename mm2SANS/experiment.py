@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 # for sample rotations
-#from scipy.spatial.transform import Rotation
+from scipy.spatial.transform import Rotation
 
 import scipy.constants
 # TODO: sign for magnetic scattering length positive or negative?
@@ -81,6 +81,9 @@ class Experiment:
 
         # keep probe object (includes all beamline settings, neutron polarisation, and the Q_veclist)
         self.Probe = input_Probe
+        # transform neutron polarisation into beamline reference frame
+        rotation_uvw_UVW = Rotation.from_matrix ( self.Probe.Beamline._rotation_uvw_UVW )
+        self.Probe.Beamline.neutron_polarisation = rotation_uvw_UVW.apply( self.Probe.Beamline.neutron_polarisation )
         # plotting options for q axes
         self._q_unit_label, self._q_unit_scaling_factor = self.Probe._get_q_axislabel_settings()
 
@@ -119,6 +122,7 @@ class Experiment:
         # set data columns for scattering components
         column_names = [
             'sld_struct', 'sld_mag_U', 'sld_mag_V', 'sld_mag_W'
+            , 'T1', 'T2', 'T3', 'T4', 'T5'
             , 'I_pp', 'I_pm', 'I_mp', 'I_mm', 'I_m', 'I_p'
             , 'I_sum', 'I_dif', 'asym'
             ]
@@ -339,7 +343,7 @@ class Experiment:
         return b_H * M_perp_FF
 
 
-    def _calc_scattering_channels(self, struct_FF, M_perp_FF, print_diagnostics=False):
+    def _calc_scattering_channels(self, struct_FF, M_perp_FF):#, print_diagnostics=False):
         """
         Calculate mixing of nuclear and magnetic scattering
 
@@ -348,63 +352,60 @@ class Experiment:
         Spin-flip channels: Ipm, Imp = T4 - T3 \mp i T5
 
         Output:
-        [Ipp, Imm, Ipm, Imp], all lists with shape (n_Q)
+        channels and each T term, saved to the data frame
         """
-
-        # stack density_FF so that is has the same shape as Mperp_FF, for easier calculation
-        N_FF_3 = np.stack( [ struct_FF for _ in range(3)], axis=1 )
 
         """ T1 = |density_FF|^2 """
         T1 = np.power(np.abs(struct_FF), 2)
+        self.data['T1'] =  np.power(np.abs(struct_FF), 2)
 
         """ initialise other scattering terms """
-        T2 = np.zeros_like( T1 )
-        T3 = np.zeros_like( T1 )
-        T4 = np.zeros_like( T1 )
-        T5 = np.zeros_like( T1 )
+        for col in ['T2', 'T3', 'T4', 'T5']:
+            self.data[col] = 0
 
         # calculate magnetic scattering contributions
-        if self.Sample.is_magnetic is True:
+        # all scattering intensities need to be real and positive
+        # explicitly return real components only, otherwise matplotlib will complain
+        #if self.Sample.is_magnetic is True:
+        if np.linalg.norm( self.Probe.Beamline.neutron_polarisation ) > 0:
+
+            # stack density_FF so that is has the same shape as Mperp_FF, for easier calculation
+            N_FF_3 = np.stack( [struct_FF for _ in range( 3 )], axis=1 )
 
             """ T2 = neutron_polarisation * [ density_FF * Mperp_FF ] """
-            T2 = np.inner(
+            self.data['T2'] = np.real( np.inner(
                 self.Probe.neutron_polarisation_UVW,
                 np.add(
                     np.multiply(np.conjugate(N_FF_3), M_perp_FF)
                     , np.multiply(N_FF_3, np.conjugate(M_perp_FF))
                     )
-                )
+                ) )
 
             """T3 = | neutron_polarisation * M_perp_FF |^2 """
-            T3 = np.power(np.abs(
+            self.data['T3'] = np.real( np.power(np.abs(
                     np.inner(self.Probe.neutron_polarisation_UVW, M_perp_FF)
-                ), 2)
+                ), 2) )
 
             """ T4 = scalar product of M_perp """
-            T4 = np.power(np.linalg.norm(M_perp_FF, axis=-1), 2)
+            self.data['T4'] = np.real( np.power( np.linalg.norm( M_perp_FF, axis=-1 ), 2 ) )
 
             """ T5 = neutron_polarisation * ( cross prouct of M_perp )"""
             #  maybe there is a faster version for the cross product over the list than a for loop?
-            T5 = np.inner(
+            # IMPORTANT: this term is purely imaginary!!!
+            self.data['T5'] = np.imag( np.inner(
                 self.Probe.neutron_polarisation_UVW
                 , np.array([np.cross(M, np.conjugate(M)) for M in M_perp_FF])
-                )
+                ) )
 
         """ Non-spin-flip channels Ipp, Imm = T1 + T3 \pm T2 """
-        I_pp = T1 + T3 + T2
-        I_mm = T1 + T3 - T2
+        self.data['I_pp'] = np.real(self.data['T1'] + self.data['T3'] + self.data['T2'])
+        self.data['I_mm'] = np.real(self.data['T1'] + self.data['T3'] - self.data['T2'])
 
         """ Spin-flip channels: Ipm, Imp = T4 - T3 \mp i T5 """
-        I_pm = T4 - T3 - 1j * T5
-        I_mp = T4 - T3 + 1j * T5
+        self.data['I_pm'] = self.data['T4'] - self.data['T3'] - self.data['T5']
+        self.data['I_mp'] = self.data['T4'] - self.data['T3'] + self.data['T5']
 
-        """ Test validity of results -- all results need to be non-complex"""
-        if print_diagnostics == True:
-            self._print_diagnostics_calc_scattpatt(T1, T2, T3, T4, T5)
-
-        # all scattering intensities need to be real and positive
-        # explicitly return real components only, otherwise matplotlib will complain
-        return np.real(I_pp), np.real(I_mm), np.real(I_pm), np.real(I_mp)
+        return
 
 
     def calc_scattering_pattern(self, print_diagnostics=False, uc_repetitions=None):
@@ -436,20 +437,16 @@ class Experiment:
                 )
             ) / self.Sample.number_of_unit_cells
 
-        # calculate scattering patterns (list of real scalars)
-        I_pp, I_mm, I_pm, I_mp = self._calc_scattering_channels( sld_struct, sld_magn, print_diagnostics=print_diagnostics )
+        # # update data frame - scattering lengths in [fm], cross sections in [barn]
+        # TODO: prefactor for sld and cross-section? #SLD: 1./1e15 # m to fm
+        self.data['sld_struct'] = sld_struct # complex
+        self.data['sld_mag_U'] = sld_magn[:, 0] # complex
+        self.data['sld_mag_V'] = sld_magn[:, 1] # complex
+        self.data['sld_mag_W'] = sld_magn[:, 2] # complex
 
-        # update data frame - scattering lengths in [fm], cross sections in [barn]
-        prefactor_sl = 1. #1./1e15 # m to fm
-        prefactor_xs  = 1. #1./1e28 # m^2 to barn
-        self.data['sld_struct'] = prefactor_sl * sld_struct # complex
-        self.data['sld_mag_U'] = prefactor_sl * sld_magn[:, 0] # complex
-        self.data['sld_mag_V'] = prefactor_sl * sld_magn[:, 1] # complex
-        self.data['sld_mag_W'] = prefactor_sl * sld_magn[:, 2] # complex
-        self.data['I_pp'] = prefactor_xs * I_pp
-        self.data['I_mm'] = prefactor_xs * I_mm
-        self.data['I_pm'] = prefactor_xs * I_pm
-        self.data['I_mp'] = prefactor_xs * I_mp
+        # calculate scattering patterns => saves real-valued numbers to self.data
+        self._calc_scattering_channels( sld_struct, sld_magn )
+
         # TODO: take into account flipping ratio?
         self.data['I_p'] = self.data['I_pp'] + self.data['I_pm']
         self.data['I_m'] = self.data['I_mm'] + self.data['I_mp']
@@ -457,53 +454,6 @@ class Experiment:
         self.data['I_dif'] = self.data['I_p'] - self.data['I_m']
         # spin asymmetry
         self.data['asym'] = self.data['I_dif'] / self.data['I_sum']
-
-        return
-
-
-    @staticmethod
-    def _test_complex_list(complex_list, print_diagnostics=False):
-        """ Test if numbers of a list of scalars contains real and/or imaginary components, or are zero. """
-
-        # check if format of input list is correct
-        if len(np.shape(complex_list)) != 1:
-            if print_diagnostics == True:
-                return print('\tInput is not a list of complex scalar numbers!')
-
-        # check for real and imaginary components
-        if np.sum(np.abs(complex_list)) == 0:
-            statement = 'only zero'
-        elif np.sum(np.abs(np.real(complex_list))) == 0:
-            statement = 'only imaginary'
-        elif np.sum(np.abs(np.imag(complex_list))) == 0:
-            statement = 'only real'
-        else:
-            statement = 'real and imaginary'
-
-        if print_diagnostics is True:
-            print(f'\tThe list contains {statement} components.')
-
-        return
-
-
-    def _print_diagnostics_calc_scattpatt(self, T1, T2, T3, T4, T5):
-
-        print('T1: |nuclear density|^2')
-        self._test_complex_list(T1)
-
-        print('T2: neutron_polarisation * mix term')
-        self._test_complex_list(T2)
-
-        print('T3: neutron_polarisation * M_perp')
-        self._test_complex_list(T3)
-
-        print('T4: | M_perp |^2')
-        self._test_complex_list(T4)
-
-        print('T5: neutron_polarisation * (cross product of M_perp)')
-        self._test_complex_list(T5)
-
-        print('NOTE: Only T5 should contain imaginary components, the rest should be real or zero!')
 
         return
 
@@ -538,7 +488,19 @@ class Experiment:
         elif column_title == 'sld_mag_W':
             axis_title = '$b_{M_{\perp,W}}(\\vec{q})$'
 
-        # net scattering cross sections (using subscripted characters)
+        # individual contribution to the scattering cross sections
+        elif column_title == 'T1':
+            axis_title = '$|b_N|^2$'
+        elif column_title == 'T2':
+            axis_title = '$\\vec{P}(b_N vec{b}_{M_\perp}^\\ast + b_N^\\ast vec{b}_{M_\perp} )$'
+        elif column_title == 'T3':
+            axis_title = '$|\\vec{P}\cdot\\vec{b}_{M_\perp}|^2$'
+        elif column_title == 'T4':
+            axis_title = '$|\\vec{b}_{M_\perp}|^2$'
+        elif column_title == 'T5': # this one is purely imaginary, hence the prefactor
+            axis_title = '$-i\\vec{P}\cdot(\\vec{b}_{M_\perp}\\times\\vec{b}_{M_\perp}^\\ast)$'
+
+        # net scattering cross sections (using subscripted characters, otherwise doesn't work in matplotlib)
         elif column_title == 'I_pp':
             axis_title = '$I₊₊$'
         elif column_title == 'I_mm':
