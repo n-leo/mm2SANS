@@ -83,7 +83,7 @@ class Experiment:
         self.Probe = input_Probe
         # transform neutron polarisation into beamline reference frame
         rotation_uvw_UVW = Rotation.from_matrix ( self.Probe.Beamline._rotation_uvw_UVW )
-        self.Probe.Beamline.neutron_polarisation = rotation_uvw_UVW.apply( self.Probe.Beamline.neutron_polarisation )
+        self.Probe.neutron_polarisation_UVW = rotation_uvw_UVW.apply( self.Probe.Beamline.neutron_polarisation )
         # plotting options for q axes
         self._q_unit_label, self._q_unit_scaling_factor = self.Probe._get_q_axislabel_settings()
 
@@ -344,7 +344,7 @@ class Experiment:
         return b_H * M_perp_FF
 
 
-    def _calc_scattering_channels(self, struct_FF, M_perp_FF):#, print_diagnostics=False):
+    def _calc_scattering_channels(self, struct_FF, M_perp_FF):
         """
         Calculate mixing of nuclear and magnetic scattering
 

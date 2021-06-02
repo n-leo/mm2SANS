@@ -77,9 +77,9 @@ class Probe:
         # calculate and set Q_veclist
         self.Q_veclist = self.calc_qmap(qmap_disorder=self.qmap_disorder)
 
-        # neutron polarisation in beamline reference frame (U,V,W)
+        # neutron polarisation in beamline reference frame (U,V,W) - start with undefined value, will be calcualted in the Experiment class
         #self.neutron_polarisation_UVW = Rotation.from_matrix(self.Beamline._rotation_uvw_UVW).apply(self.Beamline.neutron_polarisation)
-        self.neutron_polarisation_UVW = np.matmul( self.Beamline.neutron_polarisation, self.Beamline._rotation_uvw_UVW )
+        self.neutron_polarisation_UVW = np.zeros(3)
         
         return
         

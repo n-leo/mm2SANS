@@ -189,7 +189,12 @@ class Sample:
             if (np.shape(self.M_veclist)[0] != self.number_of_points) and (self.number_of_points > 1):
                 print('REMARK to input data: The length of moment values does not correspond to the number of positions.')
                 print('\tInstead use (uniform) mean magnetisation!')
-                self.M_veclist = np.array([ np.mean([self.M_veclist], axis=0) for _ in range(self.number_of_points) ])
+                self.M_veclist = np.transpose(
+                    np.tile( np.mean( self.M_veclist, axis=0 ), self.number_of_points).reshape((self.number_of_points,3))
+                    )
+                #self.M_veclist = np.array([ np.mean([self.M_veclist], axis=0) for _ in range(self.number_of_points) ])
+        # mean magnetisation vector (e.g. for subtraction of a reference scattering pattern)
+        self.mean_magnetisation = np.mean( self.M_veclist, axis=0 )
 
         # saturation magnetisation - can be position dependent
         self.saturation_magnetisation = saturation_magnetisation
