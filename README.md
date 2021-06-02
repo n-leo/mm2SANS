@@ -22,4 +22,5 @@ The example IPython notebooks (*.ipynb*) in the `examples` folder detail the fol
 - Example 2: Overview of the `Probe` class (settings of beamline and Q map).
 - Example 3: Overview of the `Experiment` class (calculation of scattering patterns).
 - Example 4: Plot magnetic scattering pattern for neutron polarisation in differnt directions.
-- Example 5: Overview of the three coordinate systems used to describe the SANS experiment.
+- Example 5: Overview of the three coordinate systems used to describe a SANS experiment.
+- Example 6: Calculation and visualisation of a rocking curve.
