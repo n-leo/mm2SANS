@@ -71,7 +71,7 @@ class Experiment:
 
         Colums of self.data, a structured pandas dataframe:
             - q_V, q_W: momentum transfer in detector plane; q_U should be zero
-            - sld_struct, sld_mag_U, sld_mag_V, sld_mag_W: structural and magnetic scattering lengths
+            - b_N, b_MU, b_MV, b_MW: structural and magnetic scattering lengths
             - I_pp, I_mm , I_pm, I_mp: non-spin-flip and spin-flip scattering cross sections
             - I_p, I_m, I_sum, I_dif: cross sections for half-polarised SANS measurements
             - asym: spin asymmetry
@@ -122,7 +122,7 @@ class Experiment:
 
         # set data columns for scattering components
         column_names = [
-            'sld_struct', 'sld_mag_U', 'sld_mag_V', 'sld_mag_W'
+            'b_N', 'b_MU', 'b_MV', 'b_MW'
             , 'T1', 'T2', 'T3', 'T4', 'T5'
             , 'I_pp', 'I_pm', 'I_mp', 'I_mm', 'I_m', 'I_p'
             , 'I_sum', 'I_dif', 'asym'
@@ -423,10 +423,10 @@ class Experiment:
         #periodicity_of_unitcell = np.ones_like(periodicity_of_unitcell)
 
         # calculate structural scattering length
-        # [sld_struct] = 1/m^2 * m^3 = m
+        # [b_N] = 1/m^2 * m^3 = m
         # multiply with scattering length density (either scalar or list); the volume is contained in the sphere form factor
         # SASview link: http://www.sasview.org/docs/user/models/sphere.html
-        sld_struct = np.multiply(
+        b_N = np.multiply(
                 self._calc_FF_struct(), periodicity_of_unitcell
             ) / self.Sample.number_of_unit_cells
 
@@ -440,13 +440,13 @@ class Experiment:
 
         # # update data frame - scattering lengths in [fm], cross sections in [barn]
         # TODO: prefactor for sld and cross-section? #SLD: 1./1e15 # m to fm
-        self.data['sld_struct'] = sld_struct # complex
-        self.data['sld_mag_U'] = sld_magn[:, 0] # complex
-        self.data['sld_mag_V'] = sld_magn[:, 1] # complex
-        self.data['sld_mag_W'] = sld_magn[:, 2] # complex
+        self.data['b_N'] = b_N # complex
+        self.data['b_MU'] = sld_magn[:, 0] # complex
+        self.data['b_MV'] = sld_magn[:, 1] # complex
+        self.data['b_MW'] = sld_magn[:, 2] # complex
 
         # calculate scattering patterns => saves real-valued numbers to self.data
-        self._calc_scattering_channels( sld_struct, sld_magn )
+        self._calc_scattering_channels( b_N, sld_magn )
 
         # TODO: take into account flipping ratio?
         self.data['I_p'] = self.data['I_pp'] + self.data['I_pm']
@@ -508,15 +508,15 @@ class Experiment:
             axis_title = '$q_W$'
 
         # structural scattering lengths
-        elif column_title == 'sld_struct':
+        elif column_title == 'b_N':
             axis_title = '$b_N(\\vec{q})$'
 
         # magnetic scattering lengths
-        elif column_title == 'sld_mag_U':
+        elif column_title == 'b_MU':
             axis_title = '$b_{M_{\perp,U}}(\\vec{q})$'
-        elif column_title == 'sld_mag_V':
+        elif column_title == 'b_MV':
             axis_title = '$b_{M_{\perp,V}}(\\vec{q})$'
-        elif column_title == 'sld_mag_W':
+        elif column_title == 'b_MW':
             axis_title = '$b_{M_{\perp,W}}(\\vec{q})$'
 
         # individual contribution to the scattering cross sections
@@ -577,7 +577,7 @@ class Experiment:
         *column_name*: string, Name of data column to plot.
             real-valued cross sections: 'I_pp', 'I_mm', 'I_pm', 'I_mp', 'I_p', 'I_m', 'I_sum', 'I_dif'
             real-valued additional terms: 'asym'
-            complex-valued scattering lengths: 'sld_struct', 'sld_magn_i' with i = U, V, W
+            complex-valued scattering lengths: 'b_N', 'sld_magn_i' with i = U, V, W
         *ax*: matplotlib axis. Axis to plot on.
             Default None. If None, a new figure will be created.
         *title*: string. Axis title.
@@ -769,7 +769,7 @@ class Experiment:
         sns.set_style('whitegrid')
 
         # how many subaxes need to be plotted?
-        number_cols, number_rows , quantity_list= 4, 2, ['sld_struct', 'sld_mag_U', 'sld_mag_V', 'sld_mag_W']
+        number_cols, number_rows , quantity_list= 4, 2, ['b_N', 'b_MU', 'b_MV', 'b_MW']
         if plot_imag is False:
             number_rows = 1
 
@@ -786,7 +786,7 @@ class Experiment:
                         )
 
         # plot the different columns
-        limit = np.quantile(np.abs(self.data['sld_struct']), 0.975)
+        limit = np.quantile(np.abs(self.data['b_N']), 0.975)
         for n, column_name in enumerate(quantity_list):
             ax = grid.axes_row[0][n]
             self.plot_property(column_name, ax=ax, limit=limit, contours=contours, plot_imag=False)
@@ -848,6 +848,8 @@ class Experiment:
             subdata.loc[:,:] = self.data[self.data[limit_column_name] >= lim_min]
         if lim_max != None:
             subdata.loc[:,:] = self.data[self.data[limit_column_name] <= lim_max]
+        # also limit the |q| range so that averageing does is affected by radius exceeding the V/W limits
+        subdata.loc[:, :] = self.data[self.data['q_abs'] <= np.max(self.data[['q_V', 'q_W']].max()) ]
 
         # get bins  - either of given width, or with a specified number
         bin_limits = []
