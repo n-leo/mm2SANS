@@ -364,6 +364,7 @@ class Experiment:
         for col in ['T2', 'T3', 'T4', 'T5']:
             self.data[col] = 0
 
+        # thanks to Dirk Honecker for the equations in the general formulation
         # calculate magnetic scattering contributions
         # all scattering intensities need to be real and positive
         # explicitly return real components only, otherwise matplotlib will complain

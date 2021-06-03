@@ -16,7 +16,7 @@ To install the `mm2SANS` package, download the source code. Browse (within an An
 
 Each function in the code features a help text accessible via `command?` or via the `Shift-Tab` tool-tip shortcut from the IPython Notebook interface.
 
-The example IPython notebooks (*.ipynb*) in the `examples` folder detail the following features:
+The example IPython notebooks (*\*.ipynb*) in the `examples` folder detail the following features:
 
 - Example 1: Overview of the `Sample` class (properties of the sample).
 - Example 2: Overview of the `Probe` class (settings of beamline and Q map).
