@@ -1,7 +1,8 @@
 from setuptools import setup
 
 description = 'Calculation of SANS scattering patterns from micromagnetic simulations'
-version = '0.1'
+date_version_update = '2021-07-06'
+version = '0.1.1'
 
 # open README file
 def readme():

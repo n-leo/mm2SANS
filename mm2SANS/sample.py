@@ -96,7 +96,7 @@ class Sample:
 
         # structure: position coordinates, shift coordinates to centre of mass
         self.R_veclist = self._check_array_dimension(positions)
-        self.R_veclist = self.R_veclist #- np.mean( self.R_veclist, axis=0)
+        self.R_veclist = self.R_veclist - np.mean( self.R_veclist, axis=0)
 
         # number of mesh points, and mesh type
         self.number_of_points = len(self.R_veclist) # right order?

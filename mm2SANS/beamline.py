@@ -173,11 +173,10 @@ class Beamline:
         Will output a scipy.spatial.Rotation object
         """
 
-        # for some reason pitch and yaw have the rotation axes swapped, even though it does not make any sense to me...
         if rotation_type == 'roll':
-            rotation_vector = [0, 1, 0]
-        elif rotation_type == 'pitch':
             rotation_vector = [1, 0, 0]
+        elif rotation_type == 'pitch':
+            rotation_vector = [0, 1, 0]
         elif rotation_type == 'yaw':
             rotation_vector = [0, 0, 1]
         else:
