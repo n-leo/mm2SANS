@@ -15,7 +15,7 @@ setup(
     packages=['mm2SANS'],
     url='https://github.com/n-leo/mm2SANS',
     license='GPL 3.0',
-    author='Naëmi leo',
+    author='Naëmi Leo',
     author_email='naemi.leo@alumni.ethz.ch',
     description=description,
 	keywords='small angle neutron scattering, magnetism, micromagnetic simulations',
