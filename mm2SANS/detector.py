@@ -34,6 +34,9 @@ class Detector:
             self.pixel_size_V = self.pixel_size_W = 2 * 7.5e-3  # [float in m] horizontal and vertical pixel size
             self.pixel_number_V = self.pixel_number_W = 128 / 2 # [int] number of pixels in horizontal and vertical direction
 
+        # detector shape (e.g. to reshape detector data for imshow etc)
+        self.shape = (self.pixel_number_V, self.pixel_number_W)
+
         return
     
     
