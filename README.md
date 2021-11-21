@@ -6,6 +6,8 @@ Calculation of SANS scattering patterns from micromagnetic simulations.
 
 This code is a heavy work in progress, so use it with caution, and please let me know if you find any bugs ;-).
 
+Relevant functionalities are now also implemented in SasView (https://www.sasview.org/).
+
 ## Installation
 
 `mm2SANS` probably is easiest used in conjuction with [Anaconda](https://www.anaconda.com/products/individual), which bundles python libraries for scientific computing.
